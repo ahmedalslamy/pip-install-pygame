@@ -1,37 +1,66 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>BRUN Match-3</title>
+    <title>BRUN Candy Match</title>
     <style>
-        body { background: #fce4ec; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
-        canvas { background: #fff; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); cursor: pointer; }
+        body { 
+            background: #fce4ec; 
+            display: flex; flex-direction: column; align-items: center; 
+            justify-content: center; height: 100vh; margin: 0; 
+            font-family: 'Arial', sans-serif;
+        }
+        #ui { margin-bottom: 10px; font-size: 24px; color: #ad1457; font-weight: bold; }
+        canvas { 
+            border-radius: 15px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3); 
+            cursor: pointer;
+            background-image: url('bg.jpg'); /* صورة الخلفية */
+            background-size: cover;
+        }
     </style>
 </head>
 <body>
+    <div id="ui">Score: <span id="score">0</span></div>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
 
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
     const SIZE = 8, TILE = 50;
-    const COLORS = ['#FF5252', '#4CAF50', '#2196F3', '#FFEB3B', '#9C27B0', '#FF9800'];
-    let grid = [], selected = null;
+    let grid = [], selected = null, score = 0;
 
-    // إنشاء الشبكة
-    for (let r = 0; r < SIZE; r++) {
-        grid[r] = [];
-        for (let c = 0; c < SIZE; c++) grid[r][c] = COLORS[Math.floor(Math.random() * COLORS.length)];
+    // تحميل الصور
+    const images = {};
+    for(let i=1; i<=5; i++) {
+        images[i] = new Image();
+        images[i].src = `${i}.png`; // سيحاول تحميل 1.png, 2.png...
+    }
+
+    // بناء المصفوفة بأرقام تمثل الصور
+    function initGrid() {
+        for (let r = 0; r < SIZE; r++) {
+            grid[r] = [];
+            for (let c = 0; c < SIZE; c++) grid[r][c] = Math.floor(Math.random() * 5) + 1;
+        }
     }
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (let r = 0; r < SIZE; r++) {
             for (let c = 0; c < SIZE; c++) {
-                ctx.fillStyle = grid[r][c];
-                ctx.roundRect(c * TILE + 5, r * TILE + 5, TILE - 10, TILE - 10, 10);
-                ctx.fill();
+                let img = images[grid[r][c]];
+                if (img.complete) {
+                    ctx.drawImage(img, c * TILE + 5, r * TILE + 5, TILE - 10, TILE - 10);
+                } else {
+                    // إذا لم ترفع الصور بعد، سيرسم مربعات كاحتياط
+                    ctx.fillStyle = "rgba(255,255,255,0.3)";
+                    ctx.fillRect(c * TILE + 5, r * TILE + 5, TILE - 10, TILE - 10);
+                }
+                
                 if (selected && selected.r === r && selected.c === c) {
-                    ctx.strokeStyle = 'black'; ctx.lineWidth = 3; ctx.stroke();
+                    ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; 
+                    ctx.strokeRect(c * TILE + 2, r * TILE + 2, TILE - 4, TILE - 4);
                 }
             }
         }
@@ -48,20 +77,16 @@
                 let temp = grid[r][c];
                 grid[r][c] = grid[selected.r][selected.c];
                 grid[selected.r][selected.c] = temp;
+                score += 10;
+                scoreEl.innerText = score;
             }
             selected = null;
         }
         draw();
     };
 
-    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
-        if (w < 2 * r) r = w / 2; if (h < 2 * r) r = h / 2;
-        this.beginPath(); this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r);
-        this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r);
-        this.arcTo(x, y, x + w, y, r); this.closePath(); return this;
-    };
-
-    draw();
+    initGrid();
+    setInterval(draw, 100); // تحديث الرسم المستمر
 </script>
 </body>
 </html>
