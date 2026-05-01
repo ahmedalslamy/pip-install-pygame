@@ -1,69 +1,58 @@
 import pygame
-import sys
+import random
 
-# إعدادات الشاشة والألوان
-WIDTH, HEIGHT = 800, 500
-WHITE = (255, 255, 255)
-GREEN = (34, 139, 34)  # لون الملعب
-PADDLE_COLOR = (200, 200, 200)
-BALL_COLOR = (235, 255, 0) # لون كرة البادل الشهير
+# الإعدادات الأساسية
+WIDTH, HEIGHT = 500, 600
+GRID_SIZE = 8  # 8x8 خانات
+TILE_SIZE = WIDTH // GRID_SIZE
+COLORS = [
+    (255, 0, 0),    # أحمر
+    (0, 255, 0),    # أخضر
+    (0, 0, 255),    # أزرق
+    (255, 255, 0),  # أصفر
+    (255, 0, 255)   # بنفسجي
+]
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Padel Mini Game")
-clock = pygame.time.Clock()
+pygame.display.set_caption("BRUN Match-3 Concept")
 
-# تعريف العناصر (المضارب والكرة)
-ball = pygame.Rect(WIDTH//2 - 10, HEIGHT//2 - 10, 20, 20)
-player = pygame.Rect(WIDTH - 20, HEIGHT//2 - 70, 10, 140)
-opponent = pygame.Rect(10, HEIGHT//2 - 70, 10, 140)
+# إنشاء مصفوفة اللعبة
+grid = [[random.choice(COLORS) for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
 
-ball_speed_x = 5
-ball_speed_y = 5
-player_speed = 0
-opponent_speed = 5
+def draw_grid():
+    for r in range(GRID_SIZE):
+        for c in range(GRID_SIZE):
+            pygame.draw.rect(screen, grid[r][c], (c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE - 2, TILE_SIZE - 2))
 
-def ball_animation():
-    global ball_speed_x, ball_speed_y
-    ball.x += ball_speed_x
-    ball.y += ball_speed_y
+def swap(pos1, pos2):
+    r1, c1 = pos1
+    r2, c2 = pos2
+    grid[r1][c1], grid[r2][c2] = grid[r2][c2], grid[r1][c1]
 
-    if ball.top <= 0 or ball.bottom >= HEIGHT:
-        ball_speed_y *= -1
+selected = None
+
+running = True
+while running:
+    screen.fill((50, 50, 50))
+    draw_grid()
     
-    if ball.colliderect(player) or ball.colliderect(opponent):
-        ball_speed_x *= -1
-
-# حلقة اللعبة الأساسية
-while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_DOWN:
-                player_speed += 7
-            if event.key == pygame.K_UP:
-                player_speed -= 7
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_DOWN:
-                player_speed -= 7
-            if event.key == pygame.K_UP:
-                player_speed += 7
-
-    ball_animation()
-    player.y += player_speed
-    
-    # ذكاء اصطناعي بسيط للمنافس
-    if opponent.top < ball.y: opponent.top += opponent_speed
-    if opponent.bottom > ball.y: opponent.bottom -= opponent_speed
-
-    # الرسم
-    screen.fill(GREEN)
-    pygame.draw.rect(screen, PADDLE_COLOR, player)
-    pygame.draw.rect(screen, PADDLE_COLOR, opponent)
-    pygame.draw.ellipse(screen, BALL_COLOR, ball)
-    pygame.draw.aaline(screen, WHITE, (WIDTH//2, 0), (WIDTH//2, HEIGHT))
+            running = False
+        
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            x, y = pygame.mouse.get_pos()
+            c, r = x // TILE_SIZE, y // TILE_SIZE
+            
+            if selected is None:
+                selected = (r, c)
+            else:
+                # إذا ضغطت على خانة مجاورة، يتم التبديل
+                if abs(selected[0] - r) + abs(selected[1] - c) == 1:
+                    swap(selected, (r, c))
+                selected = None
 
     pygame.display.flip()
-    clock.tick(60)
+
+pygame.quit()
