@@ -1,58 +1,67 @@
-import pygame
-import random
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BRUN Match-3</title>
+    <style>
+        body { background: #fce4ec; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        canvas { background: #fff; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); cursor: pointer; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
 
-# الإعدادات الأساسية
-WIDTH, HEIGHT = 500, 600
-GRID_SIZE = 8  # 8x8 خانات
-TILE_SIZE = WIDTH // GRID_SIZE
-COLORS = [
-    (255, 0, 0),    # أحمر
-    (0, 255, 0),    # أخضر
-    (0, 0, 255),    # أزرق
-    (255, 255, 0),  # أصفر
-    (255, 0, 255)   # بنفسجي
-]
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const SIZE = 8, TILE = 50;
+    const COLORS = ['#FF5252', '#4CAF50', '#2196F3', '#FFEB3B', '#9C27B0', '#FF9800'];
+    let grid = [], selected = null;
 
-pygame.init()
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("BRUN Match-3 Concept")
+    // إنشاء الشبكة
+    for (let r = 0; r < SIZE; r++) {
+        grid[r] = [];
+        for (let c = 0; c < SIZE; c++) grid[r][c] = COLORS[Math.floor(Math.random() * COLORS.length)];
+    }
 
-# إنشاء مصفوفة اللعبة
-grid = [[random.choice(COLORS) for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let r = 0; r < SIZE; r++) {
+            for (let c = 0; c < SIZE; c++) {
+                ctx.fillStyle = grid[r][c];
+                ctx.roundRect(c * TILE + 5, r * TILE + 5, TILE - 10, TILE - 10, 10);
+                ctx.fill();
+                if (selected && selected.r === r && selected.c === c) {
+                    ctx.strokeStyle = 'black'; ctx.lineWidth = 3; ctx.stroke();
+                }
+            }
+        }
+    }
 
-def draw_grid():
-    for r in range(GRID_SIZE):
-        for c in range(GRID_SIZE):
-            pygame.draw.rect(screen, grid[r][c], (c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE - 2, TILE_SIZE - 2))
+    canvas.onclick = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const c = Math.floor((e.clientX - rect.left) / TILE);
+        const r = Math.floor((e.clientY - rect.top) / TILE);
 
-def swap(pos1, pos2):
-    r1, c1 = pos1
-    r2, c2 = pos2
-    grid[r1][c1], grid[r2][c2] = grid[r2][c2], grid[r1][c1]
+        if (!selected) selected = {r, c};
+        else {
+            if (Math.abs(selected.r - r) + Math.abs(selected.c - c) === 1) {
+                let temp = grid[r][c];
+                grid[r][c] = grid[selected.r][selected.c];
+                grid[selected.r][selected.c] = temp;
+            }
+            selected = null;
+        }
+        draw();
+    };
 
-selected = None
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        if (w < 2 * r) r = w / 2; if (h < 2 * r) r = h / 2;
+        this.beginPath(); this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r);
+        this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r);
+        this.arcTo(x, y, x + w, y, r); this.closePath(); return this;
+    };
 
-running = True
-while running:
-    screen.fill((50, 50, 50))
-    draw_grid()
-    
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            x, y = pygame.mouse.get_pos()
-            c, r = x // TILE_SIZE, y // TILE_SIZE
-            
-            if selected is None:
-                selected = (r, c)
-            else:
-                # إذا ضغطت على خانة مجاورة، يتم التبديل
-                if abs(selected[0] - r) + abs(selected[1] - c) == 1:
-                    swap(selected, (r, c))
-                selected = None
-
-    pygame.display.flip()
-
-pygame.quit()
+    draw();
+</script>
+</body>
+</html>
